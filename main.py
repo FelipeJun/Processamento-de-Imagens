@@ -1,8 +1,6 @@
 import PySimpleGUI as sg
 import os
-from pathlib import Path
 from func import *
-import shutil
 import tempfile
 
 sg.theme("DarkBlue6")
@@ -10,13 +8,11 @@ sg.theme("DarkBlue6")
 menu_def = [
 ['Imagem', ['Carregar imagem', 'Carregar URL']],
 ['Salvar', ['Salvar Thumbnail','Salvar com qualidade reduzida','Salvar Imagem como',['JPG', 'PNG','BMP']]],
-['Filtros',['Editar Imagem', ['P/B', 'QTD Cor','Sepia'],'Blur',['SBlur','BoxBlur','GaussianBlur'],
+['Filtros',['Efeitos', ['Normal','P/B', 'QTD Cor','Sepia','Brilho','Cores','Contraste','Nitidez'],'Blur',['SBlur','BoxBlur','GaussianBlur'],
 'Contour','Detail','Edge Enhance','Emboss','Find Edges','Sharpen','Smooth']],
 ['Editar Imagem',['Mirror',['FLIP_TOP_BOTTOM','FLIP_LEFT_RIGHT','TRANSPOSE']]],
 ['Ajuda', ['Sobre a imagem','Mostrar Localização']],
 ]
-
-
 tmp_file = tempfile.NamedTemporaryFile(suffix=".png").name
 
 def main():
@@ -34,34 +30,35 @@ def main():
         if event == "Exit" or event == sg.WINDOW_CLOSED:
             break
         try:
-            if event in ["P/B","QTD Cor","Sepia"]:
-                applyEffect(tmp_file,event,window)
+            # Abrir a imagem
+            if event in ["Carregar imagem","Carregar URL"]:
+                open_image(tmp_file,event,window)
 
-            if event in ['SBlur','BoxBlur','GaussianBlur','Contour','Detail',
-            'Edge Enhance','Emboss','Find Edges','Sharpen','Smooth',
-            'TRANSPOSE','FLIP_TOP_BOTTOM','FLIP_LEFT_RIGHT']:
-                filter(tmp_file,event,window)
-
-            if event == "Carregar imagem":
-                 filename = carrega_imagem(window,tmp_file)
-            if event == "Carregar URL":
-                abre_url(window)
             if event == "Salvar Thumbnail":
                 save_thumbnail('temp.png',"meme2.png","png",75,75,75)
             if event == "Salvar com qualidade reduzida":
                 save_redux('temp.png',"meme3.png")
 
-            if event == "JPG":
-                image_converter('temp.png',"image.jpg","jpeg")
-            if event == "PNG":
-                image_converter('temp.png',"image.png","png")
-            if event == "BMP":
-                image_converter('temp.png',"image.bmp","bmp")
-
+            # TEM Q ARRUMAR AQ AINDA A PARTE DE SALVAR
+            if event in ["JPG","PNG","BMP"]:
+                image_converter(tmp_file,event)
+    
+            # infos da imagem
             if event == "Sobre a imagem":
                 openInfoWindow(filename,window)
             if event == "Mostrar Localização":
                 GPSLocation(filename)
+
+
+            # Eventos para edição da imagem
+            if event in ["P/B","QTD Cor","Sepia",
+            'Brilho','Cores','Contraste','Nitidez']:
+                applyEffect(filename,tmp_file,event,window)
+
+            if event in ['SBlur','BoxBlur','GaussianBlur','Contour','Detail',
+            'Edge Enhance','Emboss','Find Edges','Sharpen','Smooth',
+            'TRANSPOSE','FLIP_TOP_BOTTOM','FLIP_LEFT_RIGHT']:
+                filter(tmp_file,event,window)
             
             if event == "-IMAGE-":
                 x, y = values["-IMAGE-"]

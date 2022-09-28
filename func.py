@@ -1,5 +1,6 @@
 import io
 import os
+from turtle import color
 import PySimpleGUI as sg
 from PIL import Image
 import requests
@@ -8,6 +9,7 @@ from PIL.ExifTags import TAGS, GPSTAGS
 from pathlib import Path
 import webbrowser
 from PIL import ImageEnhance
+import shutil
 
 flips = {
 'FLIP_TOP_BOTTOM': Image.FLIP_TOP_BOTTOM,
@@ -45,34 +47,25 @@ fields = {
 "ShutterSpeedValue" : "Shutter Speed",
 }
 
-
-
-def abre_url(window):
-    url = sg.popup_get_text("Coloque a URL")
-    imagem = requests.get(url)
-    imagem = Image.open(io.BytesIO(imagem.content))
-    mostrar_imagem(imagem, window) 
-    return imagem
-def salvar_url(url):
-    imagem = requests.get(url)
-    imagem = Image.open(io.BytesIO(imagem.content))
-    imagem.save("daweb.png", format="PNG", optimize=True)
+def open_image(temp_file,event,window):
+    if event == "Carregar imagem":
+        filename = sg.popup_get_file('Get File')
+        image = Image.open(filename)
+        image.save(temp_file)
+    else:
+        url = sg.popup_get_text("Coloque a URL")
+        image = requests.get(url)
+        image = Image.open(io.BytesIO(image.content))
+    mostrar_imagem(image, window)
+    return image
 
 def mostrar_imagem(imagem, window):
     imagem.thumbnail((500,500))
     bio = io.BytesIO()
     imagem.save(bio, "PNG")
     window["-IMAGE-"].erase()
-    window["-IMAGE-"].draw_image(data=bio.getvalue(), location=(0,400))
+    window["-IMAGE-"].draw_image(data=bio.getvalue(), location=(0,400))    
 
-def carrega_imagem(window,temp_file):
-    filename = sg.popup_get_file('Get File')
-    if os.path.exists(filename):
-        imagem = Image.open(filename)
-        imagem.save(temp_file)
-        mostrar_imagem(imagem, window)
-    return filename
-    
 def GPSLocation(filename):
     image_path = Path(filename)
     exif_data = get_exif_data(image_path.absolute())
@@ -82,7 +75,6 @@ def GPSLocation(filename):
     longitude = round(float(((east[0] * 60 + east[1]) * 60 + east[2]) / 3600),7)
     url = f'https://www.google.com.br/maps/@{latitude},-{longitude},15z'
     webbrowser.open(url)
-
 
 def openInfoWindow(filename, window):
     layout = []
@@ -101,8 +93,6 @@ def openInfoWindow(filename, window):
         event,values = window.read()
         if event == "Exit" or event == sg.WIN_CLOSED:
             break
-            
-        
     window.close()
 
 
@@ -142,9 +132,10 @@ def save_redux(input_file,output_file):
     imagem = Image.open(input_file)
     imagem.save(output_file,format = "JPEG",optmize = True,quality=1)
 
-def image_converter(input_file,output_file,format):
+
+def image_converter(input_file,format):
     imagem = Image.open(input_file)
-    imagem.save(output_file, format = format,optmize =True)
+    imagem.save(input_file, format = format,optmize =True)
 
 def crop_image(input_image, coords, window):
     if os.path.exists(input_image):
@@ -158,12 +149,13 @@ def resize(input_image, coords, window):
         resized_image = image.crop(coords)
         mostrar_imagem(resized_image, window)
 
-
-
-
-def applyEffect(tmp_file,event,window):
-
-    Effects[event](tmp_file)
+def applyEffect(originalfile,tmp_file,event,window):
+    if event in ["P/B","QTD Cor","Sepia"]:
+        Effects[event](tmp_file)
+    elif event == "Normal":
+        Effects[event](originalfile, tmp_file)
+    else:
+        Effects[event](tmp_file, event, tmp_file)
 
     imagem = Image.open(tmp_file)
     imagem.thumbnail((500,500))
@@ -220,28 +212,28 @@ def convertTosepia(filename):
         sepia = image.convert("RGB")
         image.save(filename)
 
-def brilho(filename, fator, output_filename):
+def brightness(filename, event, output_filename):
     image = Image.open(filename)
     enhancer = ImageEnhance.Brightness(image)
-    new_image = enhancer.enhance(fator)
+    new_image = enhancer.enhance(event)
     new_image.save(output_filename)
 
-def contraste(filename, fator, output_filename):
+def contrast(filename, event, output_filename):
     image = Image.open(filename)
     enhancer = ImageEnhance.Contrast(image)
-    new_image = enhancer.enhance(fator)
+    new_image = enhancer.enhance(event)
     new_image.save(output_filename)
 
-def cores(filename, fator, output_filename):
+def opacity(filename, event, output_filename):
     image = Image.open(filename)
     enhancer = ImageEnhance.Color(image)
-    new_image = enhancer.enhance(fator)
+    new_image = enhancer.enhance(event)
     new_image.save(output_filename)
 
-def nitidez(filename, fator, output_filename):
+def sharpness(filename, event, output_filename):
     image = Image.open(filename)
     enhancer = ImageEnhance.Sharpness(image)
-    new_image = enhancer.enhance(fator)
+    new_image = enhancer.enhance(event)
     new_image.save(output_filename)
 
 
@@ -249,4 +241,9 @@ Effects = {
 "P/B" : convertToPb,
 "QTD Cor" : convertToQtdColor,
 "Sepia": convertTosepia,
+"Normal": shutil.copy,
+"Brilho": brightness,
+"Cores": opacity,
+"Contraste": contrast,
+"Nitidez": sharpness
 }
