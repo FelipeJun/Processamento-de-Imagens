@@ -6,8 +6,9 @@ import tempfile
 sg.theme("DarkBlue6")
 
 menu_def = [
-['Imagem', ['Carregar imagem', 'Carregar URL']],
-['Salvar', ['Salvar Thumbnail','Salvar com qualidade reduzida','Salvar Imagem como',['JPG', 'PNG','BMP']]],
+['Imagem', ['Carregar imagem', 'Carregar URL',
+'Salvar', ['Salvar Thumbnail','Salvar com qualidade reduzida','Salvar Imagem como',
+['JPG', 'PNG','BMP']]]],
 ['Filtros',['Efeitos', ['Normal','P/B', 'QTD Cor','Sepia','Brilho','Cores','Contraste','Nitidez'],'Blur',['SBlur','BoxBlur','GaussianBlur'],
 'Contour','Detail','Edge Enhance','Emboss','Find Edges','Sharpen','Smooth']],
 ['Editar Imagem',['Mirror',['FLIP_TOP_BOTTOM','FLIP_LEFT_RIGHT','TRANSPOSE']]],
