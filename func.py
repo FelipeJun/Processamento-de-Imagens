@@ -57,7 +57,7 @@ def open_image(temp_file,event,window):
         image = requests.get(url)
         image = Image.open(io.BytesIO(image.content))
     mostrar_imagem(image, window)
-    return image
+    return filename
 
 def mostrar_imagem(imagem, window):
     imagem.thumbnail((500,500))
@@ -133,9 +133,10 @@ def save_redux(input_file,output_file):
     imagem.save(output_file,format = "JPEG",optmize = True,quality=1)
 
 
-def image_converter(input_file,format):
+def image_converter(input_file,output_file,format):
+    out = output_file +'.'+ format
     imagem = Image.open(input_file)
-    imagem.save(input_file, format = format,optmize =True)
+    imagem.save(out, format = format,optmize =True)
 
 def crop_image(input_image, coords, window):
     if os.path.exists(input_image):
@@ -149,13 +150,14 @@ def resize(input_image, coords, window):
         resized_image = image.crop(coords)
         mostrar_imagem(resized_image, window)
 
-def applyEffect(originalfile,tmp_file,event,window):
+def applyEffect(originalfile,tmp_file,event,values,window):
+    factor = values["-FATOR-"]
     if event in ["P/B","QTD Cor","Sepia"]:
         Effects[event](tmp_file)
     elif event == "Normal":
         Effects[event](originalfile, tmp_file)
     else:
-        Effects[event](tmp_file, event, tmp_file)
+        Effects[event](originalfile, factor, tmp_file)
 
     imagem = Image.open(tmp_file)
     imagem.thumbnail((500,500))
