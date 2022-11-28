@@ -10,6 +10,7 @@ from pathlib import Path
 import webbrowser
 from PIL import ImageEnhance
 import shutil
+import tempfile
 
 flips = {
 'FLIP_TOP_BOTTOM': Image.FLIP_TOP_BOTTOM,
@@ -56,15 +57,17 @@ def open_image(temp_file,event,window):
         url = sg.popup_get_text("Coloque a URL")
         image = requests.get(url)
         image = Image.open(io.BytesIO(image.content))
+    temp_image2 = image.copy()
+    temp_image2.save("temp.png",format = "PNG",optmize = True)
     mostrar_imagem(image, window)
+
     return filename
 
 def mostrar_imagem(imagem, window):
-    imagem.thumbnail((500,500))
     bio = io.BytesIO()
     imagem.save(bio, "PNG")
     window["-IMAGE-"].erase()
-    window["-IMAGE-"].draw_image(data=bio.getvalue(), location=(0,400))    
+    window["-IMAGE-"].draw_image(data=bio.getvalue(), location=(0,400))
 
 def GPSLocation(filename):
     image_path = Path(filename)
@@ -130,25 +133,26 @@ def save_thumbnail(input_file,output_file,format,qualit,width, height):
 
 def save_redux(input_file,output_file):
     imagem = Image.open(input_file)
-    imagem.save(output_file,format = "JPEG",optmize = True,quality=1)
+    imagem.save(output_file,format = "PNG",optmize = True,quality=15)
 
 
 def image_converter(input_file,output_file,format):
     out = output_file +'.'+ format
     imagem = Image.open(input_file)
+    if format == 'JPEG':
+        imagem = imagem.convert('RGB')
     imagem.save(out, format = format,optmize =True)
 
-def crop_image(input_image, coords, window):
-    if os.path.exists(input_image):
-        image = Image.open(input_image)
-        cropped_image = image.crop(coords)
-        mostrar_imagem(cropped_image, window)
+def crop_image(image_path, coords, output_image_path):
+    image = Image.open(image_path)
+    cropped_image = image.crop(coords)
+    cropped_image.save(output_image_path)
 
-def resize(input_image, coords, window):
-    if os.path.exists(input_image):
-        image = Image.open(input_image)
-        resized_image = image.crop(coords)
-        mostrar_imagem(resized_image, window)
+def resize(input_image_path, output_image_path, size):
+    image = Image.open(input_image_path)
+    resized_image = image.resize(size)
+    resized_image.save(output_image_path)
+
 
 def applyEffect(originalfile,tmp_file,event,values,window):
     factor = values["-FATOR-"]
@@ -158,7 +162,6 @@ def applyEffect(originalfile,tmp_file,event,values,window):
         Effects[event](originalfile, tmp_file)
     else:
         Effects[event](originalfile, factor, tmp_file)
-
     imagem = Image.open(tmp_file)
     imagem.thumbnail((500,500))
     bio = io.BytesIO()

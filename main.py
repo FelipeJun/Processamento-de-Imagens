@@ -10,7 +10,7 @@ sg.theme("DarkBlue6")
 
 menu_def = [
 ['Imagem', ['Carregar imagem', 'Carregar URL',
-'Salvar', ['Salvar Thumbnail','Salvar com qualidade reduzida',
+'Salvar', ['recortar','resize','Salvar Thumbnail','Salvar com qualidade reduzida',
 'Salvar Imagem como',['JPEG', 'PNG','BMP']]]],
 ['Filtros',['Efeitos', ['Normal','P/B', 'QTD Cor','Sepia','Brilho','Cores','Contraste','Nitidez'],
 'Blur',['SBlur','BoxBlur','GaussianBlur'],
@@ -26,7 +26,10 @@ def main():
         [sg.Text('TEST',text_color='WHITE',key="-TEXTO-")],
         [sg.Graph(key="-IMAGE-", canvas_size=(500,500), graph_bottom_left=(0, 0),
                  graph_top_right=(400, 400), change_submits=True, drag_submits=True)],
-        [sg.Slider(range=(0, 5), default_value=2, resolution=0.1, orientation="h", enable_events=True, key="-FATOR-")],
+        [sg.Slider(range=(0, 5), default_value=2, resolution=0.1, orientation="h", enable_events=True, disabled= True,key="-FATOR-")],
+        [sg.Text('X,Y INI:',text_color='WHITE',key="-INI-")],
+        [sg.Text('X,Y FINAL:',text_color='WHITE',key="-FINAL-")],
+        [sg.Button('Recortar',key="-RECORTAR-")],
     ]
 
     window = sg.Window("Visualizador de Imagem",layout = layout)
@@ -42,14 +45,34 @@ def main():
             # Abrir a imagem
             if event in ["Carregar imagem","Carregar URL"]:
                 filename = open_image(tmp_file,event,window)
+                
 
+            if event == 'resize':
+                x = int(sg.popup_get_text("Coloque X"))
+                y = int(sg.popup_get_text("Coloque Y"))
+                resize(tmp_file,"resizedImage.png",(x,y))
 
             if event == "Salvar Thumbnail":
                 save_thumbnail(tmp_file,"Thumbnail.png","png",75,75,75)
+
             if event == "Salvar com qualidade reduzida":
                 save_redux(tmp_file,"Redux.png")
 
-            # TEM Q ARRUMAR AQ AINDA A PARTE DE SALVAR
+            if event == 'recortar':
+                #esquerdo baixo para direita cima
+                if(ponto_inicial[0] < ponto_final[0] and ponto_inicial[1] < ponto_final[1] ):
+                    crop_image(tmp_file,(ponto_inicial[0],ponto_inicial[1],ponto_final[0],ponto_final[1]),"imagemRecortada.png")
+                #esquerda cima para direita baixo
+                elif(ponto_inicial[0] < ponto_final[0] and ponto_inicial[1] > ponto_final[1]):
+                    crop_image(tmp_file,(ponto_inicial[0],ponto_final[1],ponto_final[0],ponto_inicial[1]),"imagemRecortada.png")
+
+                #direita cima para esquerda baixo
+                elif(ponto_inicial[0] > ponto_final[0] and ponto_inicial[1] > ponto_final[1]):
+                    crop_image(tmp_file,(ponto_final[0],ponto_final[1],ponto_inicial[0],ponto_inicial[1],),"imagemRecortada.png")
+                #direita baixo para esquerda cima
+                else:
+                    crop_image(tmp_file,(ponto_final[0],ponto_inicial[1],ponto_inicial[0],ponto_final[1]),"imagemRecortada.png")
+                
             if event in ["JPEG","PNG","BMP"]:
                 image_converter(tmp_file,'saved',event)
     
@@ -61,10 +84,13 @@ def main():
 
 
             # Eventos para edição da imagem
-            if event in ["P/B","QTD Cor","Sepia",
+            if event in ["Normal","P/B","QTD Cor","Sepia",
             'Brilho','Cores','Contraste','Nitidez']:
                 window.Element('-TEXTO-').update(event)
                 actualeffect = event
+                window.Element("-FATOR-").update(disabled = False,value = 2)
+                applyEffect(filename,tmp_file,actualeffect,values,window)
+
                 
 
             if event in ['SBlur','BoxBlur','GaussianBlur','Contour','Detail',
@@ -74,6 +100,9 @@ def main():
 
             if event == "-FATOR-":
                applyEffect(filename,tmp_file,actualeffect,values,window)
+
+            if event == "-RECORTAR-":
+                pass
             
             if event == "-IMAGE-":
                 x, y = values["-IMAGE-"]
@@ -86,6 +115,12 @@ def main():
                     window["-IMAGE-"].delete_figure(retangulo)
                 if None not in (ponto_inicial, ponto_final):
                     retangulo = window["-IMAGE-"].draw_rectangle(ponto_inicial, ponto_final, line_color='red')
+                    
+                    window.Element('-INI-').update(f'{ponto_inicial}')
+                    window.Element('-FINAL-').update(f'{ponto_final}')
+                    
+                    
+                
             elif event.endswith('+UP'):
                 dragging = False
             
@@ -95,7 +130,6 @@ def main():
             sg.popup_error(e)
 
     window.close()
-    os.remove('temp.png')
 
 
 if __name__ == "__main__":
